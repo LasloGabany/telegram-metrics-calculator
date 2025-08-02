@@ -7,180 +7,504 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* ... (предыдущие стили) ... */
-    
-    /* Дополнительные стили для Telegram */
-    .tg-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary: #8b5cf6;
+      --accent: #ec4899;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --dark: #1e293b;
+      --light: #f8fafc;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: var(--dark);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 15px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Заголовок */
+    .app-header {
+      text-align: center;
+      margin-bottom: 25px;
+      padding: 15px 0;
+    }
+
+    .app-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 5px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .app-subtitle {
+      color: rgba(255,255,255,0.9);
+      font-size: 0.95rem;
+    }
+
+    /* Карточки */
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 25px;
       margin-bottom: 20px;
-      padding: 10px 0;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    
-    .tg-title {
-      font-size: 1.5rem;
-      font-weight: bold;
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15);
     }
-    
-    .tg-button {
-      background: var(--tg-theme-button-color, #3390ec);
-      color: var(--tg-theme-button-text-color, #ffffff);
-      border: none;
-      border-radius: 8px;
-      padding: 8px 16px;
+
+    .card-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid rgba(99, 102, 241, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title::before {
+      content: '';
+      width: 5px;
+      height: 24px;
+      background: linear-gradient(to bottom, var(--primary), var(--secondary));
+      border-radius: 3px;
+    }
+
+    /* Формы */
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 8px;
       font-size: 0.9rem;
-      cursor: pointer;
-      transition: opacity 0.3s;
     }
-    
-    .tg-button:hover {
-      opacity: 0.9;
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background: white;
     }
-    
-    .tg-main-button {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--tg-theme-button-color, #3390ec);
-      color: var(--tg-theme-button-text-color, #ffffff);
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Кнопки */
+    .btn {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
       border: none;
-      border-radius: 10px;
-      padding: 12px 24px;
+      padding: 14px 24px;
+      border-radius: 12px;
       font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      z-index: 1000;
-    }
-    
-    /* Адаптация для Telegram */
-    body {
-      background-color: var(--tg-theme-bg-color, #ffffff);
-      color: var(--tg-theme-text-color, #000000);
-      padding: 15px;
-      padding-bottom: 80px; /* Место для кнопки */
-    }
-    
-    .card {
-      background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
-      border: 1px solid var(--tg-theme-section-separator-color, #e0e0e0);
-    }
-    
-    input {
-      background-color: var(--tg-theme-bg-color, #ffffff);
-      color: var(--tg-theme-text-color, #000000);
-      border: 1px solid var(--tg-theme-hint-color, #999999);
-    }
-    
-    .metric-card {
-      background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
-      border-left-color: var(--tg-theme-button-color, #3390ec);
-    }
-    
-    .metric-value {
-      color: var(--tg-theme-button-color, #3390ec);
-    }
-    
-    .btn {
-      background-color: var(--tg-theme-button-color, #3390ec);
-      color: var(--tg-theme-button-text-color, #ffffff);
-    }
-    
-    .btn-secondary {
-      background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
-      color: var(--tg-theme-text-color, #000000);
-      border: 1px solid var(--tg-theme-hint-color, #999999);
-    }
-    
-    /* Стили для Telegram */
-    .tg-stats {
-      display: flex;
-      justify-content: space-around;
-      margin: 20px 0;
-      padding: 15px;
-      background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
-      border-radius: 12px;
-    }
-    
-    .tg-stat {
-      text-align: center;
-    }
-    
-    .tg-stat-value {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: var(--tg-theme-button-color, #3390ec);
-    }
-    
-    .tg-stat-label {
-      font-size: 0.8rem;
-      color: var(--tg-theme-hint-color, #999999);
-    }
-    
-    .tg-share-section {
-      margin-top: 30px;
-      text-align: center;
-    }
-    
-    .tg-share-button {
-      background: linear-gradient(135deg, #0088cc, #00a2ff);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 20px;
-      font-size: 0.9rem;
-      cursor: pointer;
+      transition: all 0.3s ease;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      margin: 0 5px;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
-    
-    @media (max-width: 480px) {
-      .grid {
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 15px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+      box-shadow: none;
+    }
+
+    .btn-secondary:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .btn-group .btn {
+      flex: 1;
+    }
+
+    /* Результаты */
+    .results {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .metric-card {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-radius: 16px;
+      padding: 16px;
+      border-left: 4px solid var(--primary);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+      border-radius: 0 16px 0 60px;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .metric-label {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .metric-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Светофор */
+    .traffic-light {
+      display: flex;
+      justify-content: center;
+      margin: 25px 0;
+    }
+
+    .light {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      color: white;
+      font-weight: bold;
+      box-shadow: var(--shadow-lg);
+      transition: all 0.5s ease;
+    }
+
+    .light.green {
+      background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+    }
+
+    .light.yellow {
+      background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+    }
+
+    .light.red {
+      background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+    }
+
+    .light.neutral {
+      background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    }
+
+    /* Статистика вверху */
+    .stats-bar {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    /* График */
+    .chart-container {
+      height: 250px;
+      margin: 20px 0;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 16px;
+      padding: 15px;
+      box-shadow: var(--shadow);
+    }
+
+    /* Детальные метрики */
+    .detailed-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .detail-metric {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-radius: 16px;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .detail-metric-label {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .detail-metric-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Сводка эффективности */
+    .efficiency-card {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 16px;
+      margin: 20px 0;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .efficiency-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+
+    .progress-bar {
+      height: 12px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 15px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: white;
+      border-radius: 6px;
+      transition: width 1s ease;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+
+    .efficiency-text {
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+
+    /* Кнопки действий */
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 25px;
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.3s ease;
+    }
+
+    .share-btn {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .share-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 15px rgba(59, 130, 246, 0.4);
+    }
+
+    .report-btn {
+      background: white;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+
+    .report-btn:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Уведомления */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--dark);
+      color: white;
+      padding: 14px 24px;
+      border-radius: 50px;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      font-weight: 600;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Анимации */
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+      }
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    /* Адаптивность */
+    @media (max-width: 768px) {
+      .results {
         grid-template-columns: 1fr;
+      }
+      
+      .detailed-metrics {
+        grid-template-columns: 1fr;
+      }
+      
+      .btn-group {
+        flex-direction: column;
+      }
+      
+      .action-buttons {
+        flex-direction: column;
+      }
+      
+      .stats-bar {
+        flex-wrap: wrap;
         gap: 15px;
       }
       
-      .card {
-        padding: 15px;
-      }
-      
-      .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+      .stat-item {
+        flex: 1;
+        min-width: 100px;
       }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="tg-header">
-      <div class="tg-title">Калькулятор метрик</div>
-      <button class="tg-button" onclick="closeApp()">Закрыть</button>
+    <!-- Заголовок приложения -->
+    <div class="app-header">
+      <h1 class="app-title">Калькулятор метрик</h1>
+      <p class="app-subtitle">Оцените эффективность вашей подписной модели</p>
     </div>
-    
-    <div class="tg-stats">
-      <div class="tg-stat">
-        <div class="tg-stat-value" id="tgLTV">--</div>
-        <div class="tg-stat-label">LTV</div>
+
+    <!-- Панель статистики -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-value" id="tgLTV">--</div>
+        <div class="stat-label">LTV</div>
       </div>
-      <div class="tg-stat">
-        <div class="tg-stat-value" id="tgCAC">--</div>
-        <div class="tg-stat-label">CAC</div>
+      <div class="stat-item">
+        <div class="stat-value" id="tgCAC">--</div>
+        <div class="stat-label">CAC</div>
       </div>
-      <div class="tg-stat">
-        <div class="tg-stat-value" id="tgEfficiency">--</div>
-        <div class="tg-stat-label">Эффективность</div>
+      <div class="stat-item">
+        <div class="stat-value" id="tgEfficiency">--</div>
+        <div class="stat-label">Эффективность</div>
       </div>
     </div>
 
     <div class="grid">
       <!-- ВХОДНЫЕ ПОКАЗАТЕЛИ -->
       <div class="card">
-        <h2>Входные данные</h2>
+        <h2 class="card-title">Входные данные</h2>
         
         <div class="form-group">
           <label for="startSubs">Начальное количество подписчиков</label>
@@ -217,18 +541,22 @@
           <input type="number" id="grossMargin" min="0" max="100" placeholder="Доля прибыли">
         </div>
         
-        <div class="actions">
-          <button class="btn" onclick="calculate()">Рассчитать</button>
-          <button class="btn btn-secondary" onclick="resetForm()">Сброс</button>
+        <div class="btn-group">
+          <button class="btn pulse" onclick="calculate()">
+            <span>🚀</span> Рассчитать
+          </button>
+          <button class="btn btn-secondary" onclick="resetForm()">
+            <span>🔄</span> Сброс
+          </button>
         </div>
       </div>
       
       <!-- РЕЗУЛЬТАТЫ -->
       <div class="card">
-        <h2>Результаты</h2>
+        <h2 class="card-title">Результаты</h2>
         
         <div id="results" class="results">
-          <div style="grid-column: 1/-1; text-align: center; padding: 20px;">
+          <div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #64748b;">
             Введите данные и нажмите "Рассчитать"
           </div>
         </div>
@@ -237,96 +565,55 @@
           <div id="trafficLight" class="light neutral">?</div>
         </div>
         
-        <div class="actions">
-          <button class="btn" onclick="copyResults()">
-            <span>📋</span> Копировать
+        <div class="action-buttons">
+          <button class="action-btn share-btn" onclick="shareResults()">
+            <span>📤</span> Поделиться
+          </button>
+          <button class="action-btn report-btn" onclick="generateReport()">
+            <span>📊</span> Отчет
           </button>
         </div>
       </div>
     </div>
     
-    <!-- ДЭШБОРД -->
+    <!-- АНАЛИТИЧЕСКАЯ ПАНЕЛЬ -->
     <div class="card">
-      <h2>Аналитика</h2>
+      <h2 class="card-title">Аналитика</h2>
       
       <div class="chart-container">
         <canvas id="metricsChart"></canvas>
       </div>
       
       <div class="detailed-metrics">
-        <div class="metric-item">
-          <div class="metric-label">ROMI</div>
-          <div class="metric-value" id="romi">--</div>
+        <div class="detail-metric">
+          <div class="detail-metric-label">ROMI</div>
+          <div class="detail-metric-value" id="romi">--</div>
         </div>
-        <div class="metric-item">
-          <div class="metric-label">Окупаемость</div>
-          <div class="metric-value" id="breakEven">--</div>
+        <div class="detail-metric">
+          <div class="detail-metric-label">Окупаемость</div>
+          <div class="detail-metric-value" id="breakEven">--</div>
         </div>
       </div>
       
-      <div class="summary-card">
-        <h3>Эффективность бизнеса</h3>
+      <div class="efficiency-card">
+        <h3 class="efficiency-title">Эффективность бизнеса</h3>
         <div class="progress-bar">
           <div class="progress-fill" id="efficiencyBar"></div>
         </div>
-        <div class="summary-text" id="summaryText">
+        <div class="efficiency-text" id="summaryText">
           Введите данные для анализа
         </div>
       </div>
     </div>
-    
-    <div class="tg-share-section">
-      <button class="tg-share-button" onclick="shareResults()">
-        <span>📤</span> Поделиться результатами
-      </button>
-      <button class="tg-share-button" onclick="generateReport()">
-        <span>📊</span> Полный отчет
-      </button>
-    </div>
   </div>
-  
-  <button class="tg-main-button" onclick="calculate()">Рассчитать метрики</button>
   
   <div id="toast" class="toast">Результаты скопированы!</div>
 
   <script>
     // Инициализация Telegram Web App
     let tg = window.Telegram.WebApp;
-    tg.expand(); // Расширяем на весь экран
-    
-    // Применяем тему Telegram
-    function applyTelegramTheme() {
-      const root = document.documentElement;
-      
-      // Устанавливаем CSS переменные из темы Telegram
-      root.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
-      root.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
-      root.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
-      root.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#3390ec');
-      root.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#3390ec');
-      root.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
-      root.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f5f5f5');
-      root.style.setProperty('--tg-theme-section-separator-color', tg.themeParams.section_separator_color || '#e0e0e0');
-    }
-    
-    // Вызываем при загрузке
-    applyTelegramTheme();
-    
-    // Функция закрытия приложения
-    function closeApp() {
-      tg.close();
-    }
-    
-    // Функция поделиться результатами
-    function shareResults() {
-      const resultsText = document.getElementById('results').innerText;
-      
-      if (resultsText && resultsText !== 'Введите данные и нажмите "Рассчитать"') {
-        tg.shareMessage(`Результаты расчета метрик подписки:\n\n${resultsText}`);
-      } else {
-        showToast('Сначала выполните расчет');
-      }
-    }
+    tg.expand();
+    tg.ready();
     
     // Функция показа уведомлений
     function showToast(message) {
@@ -357,7 +644,6 @@
       grossMargin: document.getElementById('grossMargin'),
       results: document.getElementById('results'),
       trafficLight: document.getElementById('trafficLight'),
-      toast: document.getElementById('toast'),
       romi: document.getElementById('romi'),
       breakEven: document.getElementById('breakEven'),
       efficiencyBar: document.getElementById('efficiencyBar'),
@@ -376,13 +662,17 @@
         datasets: [{
           label: 'LTV',
           data: [12000, 13500, 14200, 15000, 15800, 16500],
-          borderColor: tg.themeParams.link_color || '#3390ec',
-          tension: 0.4
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99, 102, 241, 0.1)',
+          tension: 0.4,
+          fill: true
         }, {
           label: 'CAC',
           data: [8000, 8200, 7900, 8100, 7800, 7600],
           borderColor: '#10b981',
-          tension: 0.4
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          tension: 0.4,
+          fill: true
         }]
       },
       options: {
@@ -390,26 +680,37 @@
         maintainAspectRatio: false,
         plugins: {
           legend: {
+            position: 'top',
             labels: {
-              color: tg.themeParams.text_color || '#000000'
+              usePointStyle: true,
+              padding: 20,
+              font: {
+                size: 12,
+                weight: '600'
+              }
             }
           }
         },
         scales: {
           y: {
-            ticks: {
-              color: tg.themeParams.hint_color || '#999999'
-            },
+            beginAtZero: true,
             grid: {
-              color: tg.themeParams.section_separator_color || '#e0e0e0'
+              color: 'rgba(0, 0, 0, 0.05)'
+            },
+            ticks: {
+              font: {
+                size: 11
+              }
             }
           },
           x: {
-            ticks: {
-              color: tg.themeParams.hint_color || '#999999'
-            },
             grid: {
-              color: tg.themeParams.section_separator_color || '#e0e0e0'
+              display: false
+            },
+            ticks: {
+              font: {
+                size: 11
+              }
             }
           }
         }
@@ -428,10 +729,10 @@
     
     // Функция получения текста сводки
     function getSummaryText(efficiency) {
-      if (efficiency >= 80) return "Отличная эффективность! Бизнес очень устойчив.";
-      if (efficiency >= 60) return "Хорошая эффективность. Есть потенциал роста.";
-      if (efficiency >= 40) return "Средняя эффективность. Нужна оптимизация.";
-      return "Низкая эффективность. Требуется вмешательство.";
+      if (efficiency >= 80) return "🚀 Отличная эффективность! Ваш бизнес очень устойчив.";
+      if (efficiency >= 60) return "⚡ Хорошая эффективность. Есть потенциал для улучшения.";
+      if (efficiency >= 40) return "⚠️ Средняя эффективность. Рекомендуется оптимизация.";
+      return "🔴 Низкая эффективность. Требуется срочное вмешательство.";
     }
     
     // Основная функция расчета
@@ -521,6 +822,8 @@
       if (tg.HapticFeedback) {
         tg.HapticFeedback.impactOccurred('medium');
       }
+      
+      showToast('Расчет завершен!');
     }
     
     // Функция обновления графика
@@ -555,7 +858,7 @@
       elements.price.value = '';
       elements.grossMargin.value = '';
       
-      elements.results.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px;">Введите данные и нажмите "Рассчитать"</div>';
+      elements.results.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #64748b;">Введите данные и нажмите "Рассчитать"</div>';
       elements.trafficLight.className = 'light neutral';
       elements.trafficLight.textContent = '?';
       
@@ -568,22 +871,20 @@
       elements.tgLTV.textContent = '--';
       elements.tgCAC.textContent = '--';
       elements.tgEfficiency.textContent = '--';
+      
+      showToast('Форма сброшена');
     }
     
-    // Функция копирования результатов
-    function copyResults() {
-      const resultsText = Array.from(elements.results.querySelectorAll('.metric-card'))
-        .map(card => {
-          const label = card.querySelector('.metric-label').textContent;
-          const value = card.querySelector('.metric-value').textContent;
-          return `${label}: ${value}`;
-        })
-        .join('\n');
+    // Функция поделиться результатами
+    function shareResults() {
+      const resultsText = document.getElementById('results').innerText;
       
-      navigator.clipboard.writeText(resultsText)
-        .then(() => {
-          showToast('Результаты скопированы!');
-        });
+      if (resultsText && resultsText !== 'Введите данные и нажмите "Рассчитать"') {
+        tg.shareMessage(`📊 Результаты расчета метрик подписки:\n\n${resultsText}`);
+        showToast('Результаты отправлены!');
+      } else {
+        showToast('Сначала выполните расчет');
+      }
     }
     
     // Функция генерации отчета
@@ -618,10 +919,10 @@
         statusColor = "#27ae60";
         recommendations = `
           <ul>
-            <li>Масштабируйте бизнес: увеличивайте бюджет на маркетинг</li>
-            <li>Расширяйте географию присутствия</li>
-            <li>Добавляйте новые продукты или услуги</li>
-            <li>Поддерживайте высокий уровень сервиса</li>
+            <li>🚀 Масштабируйте бизнес: увеличивайте бюджет на маркетинг</li>
+            <li>🌍 Расширяйте географию присутствия</li>
+            <li>📦 Добавляйте новые продукты или услуги</li>
+            <li>⭐ Поддерживайте высокий уровень сервиса</li>
           </ul>
         `;
       } else if (efficiency >= 60) {
@@ -629,10 +930,10 @@
         statusColor = "#f39c12";
         recommendations = `
           <ul>
-            <li>Работайте над удержанием клиентов</li>
-            <li>Оптимизируйте маркетинговые каналы</li>
-            <li>Улучшайте продукт на основе обратной связи</li>
-            <li>Тестируйте новые стратегии монетизации</li>
+            <li>📈 Работайте над удержанием клиентов</li>
+            <li>🎯 Оптимизируйте маркетинговые каналы</li>
+            <li>🔧 Улучшайте продукт на основе обратной связи</li>
+            <li>💡 Тестируйте новые стратегии монетизации</li>
           </ul>
         `;
       } else {
@@ -640,10 +941,10 @@
         statusColor = "#e74c3c";
         recommendations = `
           <ul>
-            <li>Срочно снижайте стоимость привлечения клиентов (CAC)</li>
-            <li>Повышайте пожизненную ценность клиента (LTV)</li>
-            <li>Пересмотрите бизнес-модель</li>
-            <li>Проанализируйте и оптимизируйте все процессы</li>
+            <li>⬇️ Срочно снижайте стоимость привлечения клиентов (CAC)</li>
+            <li>⬆️ Повышайте пожизненную ценность клиента (LTV)</li>
+            <li>🔄 Пересмотрите бизнес-модель</li>
+            <li>📊 Проанализируйте и оптимизируйте все процессы</li>
           </ul>
         `;
       }
@@ -663,124 +964,134 @@
               color: #333;
               margin: 0;
               padding: 20px;
-              background-color: #f9f9f9;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             }
             
             .report-container {
               max-width: 800px;
               margin: 0 auto;
-              padding: 20px;
-              background-color: white;
-              border-radius: 8px;
-              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+              padding: 30px;
+              background: white;
+              border-radius: 20px;
+              box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             }
             
             .report-header {
               text-align: center;
-              margin-bottom: 30px;
-              border-bottom: 2px solid #3498db;
+              margin-bottom: 40px;
               padding-bottom: 20px;
+              border-bottom: 2px solid #f1f5f9;
             }
             
             .report-title {
-              color: #2c3e50;
-              font-size: 28px;
+              color: #1e293b;
+              font-size: 32px;
               margin-bottom: 10px;
+              font-weight: 800;
             }
             
             .report-date {
-              color: #7f8c8d;
+              color: #64748b;
               font-size: 16px;
             }
             
             .report-section {
-              margin-bottom: 30px;
+              margin-bottom: 40px;
             }
             
             .report-section-title {
-              color: #3498db;
-              font-size: 20px;
-              margin-bottom: 15px;
-              padding-bottom: 5px;
-              border-bottom: 1px solid #ddd;
+              color: #6366f1;
+              font-size: 24px;
+              margin-bottom: 20px;
+              padding-bottom: 10px;
+              border-bottom: 2px solid #e2e8f0;
+              font-weight: 700;
             }
             
             .report-table {
               width: 100%;
               border-collapse: collapse;
-              margin-bottom: 20px;
+              margin-bottom: 30px;
+              background: white;
+              border-radius: 12px;
+              overflow: hidden;
+              box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             }
             
             .report-table th, .report-table td {
-              padding: 12px;
+              padding: 15px;
               text-align: left;
-              border-bottom: 1px solid #ddd;
+              border-bottom: 1px solid #f1f5f9;
             }
             
             .report-table th {
-              background-color: #f8f9fa;
-              font-weight: bold;
+              background: #f8fafc;
+              font-weight: 700;
+              color: #475569;
             }
             
             .report-metric {
-              background-color: #f8f9fa;
-              border-radius: 8px;
-              padding: 15px;
-              margin-bottom: 15px;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+              background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+              border-radius: 16px;
+              padding: 20px;
+              margin-bottom: 20px;
+              box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             }
             
             .report-metric-title {
-              font-weight: bold;
-              color: #2c3e50;
-              margin-bottom: 5px;
+              font-weight: 700;
+              color: #475569;
+              margin-bottom: 10px;
+              font-size: 18px;
             }
             
             .report-metric-value {
-              font-size: 24px;
-              font-weight: bold;
-              color: #3498db;
+              font-size: 28px;
+              font-weight: 800;
+              color: #6366f1;
             }
             
             .report-efficiency {
               text-align: center;
-              margin: 30px 0;
+              margin: 40px 0;
             }
             
             .report-efficiency-bar {
               height: 30px;
-              background: linear-gradient(to right, #e74c3c, #f39c12, #27ae60);
+              background: linear-gradient(to right, #ef4444, #f59e0b, #10b981);
               border-radius: 15px;
               position: relative;
-              margin: 20px 0;
+              margin: 25px 0;
             }
             
             .report-efficiency-marker {
               position: absolute;
-              top: -10px;
-              width: 50px;
-              height: 50px;
+              top: -15px;
+              width: 60px;
+              height: 60px;
               background-color: white;
-              border: 4px solid #3498db;
+              border: 5px solid #6366f1;
               border-radius: 50%;
               transform: translateX(-50%);
               display: flex;
               align-items: center;
               justify-content: center;
-              font-weight: bold;
+              font-weight: 800;
+              font-size: 18px;
             }
             
             .report-recommendations {
-              background-color: #e8f4fc;
-              border-left: 4px solid #3498db;
-              padding: 20px;
-              margin: 20px 0;
-              border-radius: 0 4px 4px 0;
+              background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+              border-radius: 16px;
+              padding: 25px;
+              margin: 30px 0;
             }
             
             .report-recommendations h3 {
               margin-top: 0;
-              color: #2c3e50;
+              color: #4338ca;
+              font-size: 22px;
+              margin-bottom: 15px;
             }
             
             .report-recommendations ul {
@@ -788,18 +1099,23 @@
               padding-left: 20px;
             }
             
+            .report-recommendations li {
+              margin-bottom: 10px;
+              font-size: 16px;
+            }
+            
             .report-footer {
               text-align: center;
-              margin-top: 40px;
+              margin-top: 50px;
               padding-top: 20px;
-              border-top: 1px solid #ddd;
-              color: #7f8c8d;
+              border-top: 1px solid #e2e8f0;
+              color: #64748b;
               font-size: 14px;
             }
             
             @media print {
               body {
-                background-color: white;
+                background: white;
                 padding: 0;
               }
               
@@ -815,12 +1131,12 @@
         <body>
           <div class="report-container">
             <div class="report-header">
-              <h1 class="report-title">Отчет по метрикам подписки</h1>
+              <h1 class="report-title">📊 Отчет по метрикам подписки</h1>
               <div class="report-date">Дата создания: ${new Date().toLocaleDateString('ru-RU')}</div>
             </div>
             
             <div class="report-section">
-              <h2 class="report-section-title">Входные данные</h2>
+              <h2 class="report-section-title">📝 Входные данные</h2>
               <table class="report-table">
                 <tr>
                   <th>Показатель</th>
@@ -858,7 +1174,7 @@
             </div>
             
             <div class="report-section">
-              <h2 class="report-section-title">Результаты расчетов</h2>
+              <h2 class="report-section-title">📈 Результаты расчетов</h2>
               
               <div class="report-metric">
                 <div class="report-metric-title">Отток (Churn Rate)</div>
@@ -902,22 +1218,22 @@
             </div>
             
             <div class="report-section">
-              <h2 class="report-section-title">Сводка эффективности</h2>
+              <h2 class="report-section-title">🎯 Сводка эффективности</h2>
               
               <div class="report-efficiency">
-                <div style="font-size: 18px; margin-bottom: 10px;">Уровень эффективности вашего бизнеса</div>
+                <div style="font-size: 20px; margin-bottom: 15px; color: #475569; font-weight: 600;">Уровень эффективности вашего бизнеса</div>
                 <div class="report-efficiency-bar">
                   <div class="report-efficiency-marker" style="left: ${efficiency}%; color: ${statusColor};">
                     ${efficiency.toFixed(0)}%
                   </div>
                 </div>
-                <div style="font-size: 24px; font-weight: bold; color: ${statusColor};">
+                <div style="font-size: 28px; font-weight: 800; color: ${statusColor}; margin-top: 20px;">
                   ${status}
                 </div>
               </div>
               
               <div class="report-recommendations">
-                <h3 style="margin-top: 0;">Рекомендации:</h3>
+                <h3>🚀 Рекомендации:</h3>
                 ${recommendations}
               </div>
             </div>
@@ -936,7 +1252,7 @@
       reportWindow.document.write(reportHTML);
       reportWindow.document.close();
       
-      showToast('Отчет создан в новом окне!');
+      showToast('Отчет создан!');
     }
     
     // Инициализация
@@ -947,16 +1263,6 @@
       if (element.tagName === 'INPUT') {
         element.addEventListener('input', calculate);
       }
-    });
-    
-    // Устанавливаем главную кнопку
-    tg.MainButton.setText('Рассчитать метрики');
-    tg.MainButton.onClick(calculate);
-    tg.MainButton.show();
-    
-    // Обработка изменений темы
-    tg.onEvent('themeChanged', function() {
-      applyTelegramTheme();
     });
   </script>
 </body>
