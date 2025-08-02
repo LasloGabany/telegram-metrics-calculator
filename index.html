@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Калькулятор метрик подписки</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* ... (предыдущие стили) ... */
+    
+    /* Дополнительные стили для Telegram */
+    .tg-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 10px 0;
+    }
+    
+    .tg-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    
+    .tg-button {
+      background: var(--tg-theme-button-color, #3390ec);
+      color: var(--tg-theme-button-text-color, #ffffff);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+    
+    .tg-button:hover {
+      opacity: 0.9;
+    }
+    
+    .tg-main-button {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--tg-theme-button-color, #3390ec);
+      color: var(--tg-theme-button-text-color, #ffffff);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+    }
+    
+    /* Адаптация для Telegram */
+    body {
+      background-color: var(--tg-theme-bg-color, #ffffff);
+      color: var(--tg-theme-text-color, #000000);
+      padding: 15px;
+      padding-bottom: 80px; /* Место для кнопки */
+    }
+    
+    .card {
+      background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+      border: 1px solid var(--tg-theme-section-separator-color, #e0e0e0);
+    }
+    
+    input {
+      background-color: var(--tg-theme-bg-color, #ffffff);
+      color: var(--tg-theme-text-color, #000000);
+      border: 1px solid var(--tg-theme-hint-color, #999999);
+    }
+    
+    .metric-card {
+      background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+      border-left-color: var(--tg-theme-button-color, #3390ec);
+    }
+    
+    .metric-value {
+      color: var(--tg-theme-button-color, #3390ec);
+    }
+    
+    .btn {
+      background-color: var(--tg-theme-button-color, #3390ec);
+      color: var(--tg-theme-button-text-color, #ffffff);
+    }
+    
+    .btn-secondary {
+      background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+      color: var(--tg-theme-text-color, #000000);
+      border: 1px solid var(--tg-theme-hint-color, #999999);
+    }
+    
+    /* Стили для Telegram */
+    .tg-stats {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+      padding: 15px;
+      background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+      border-radius: 12px;
+    }
+    
+    .tg-stat {
+      text-align: center;
+    }
+    
+    .tg-stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--tg-theme-button-color, #3390ec);
+    }
+    
+    .tg-stat-label {
+      font-size: 0.8rem;
+      color: var(--tg-theme-hint-color, #999999);
+    }
+    
+    .tg-share-section {
+      margin-top: 30px;
+      text-align: center;
+    }
+    
+    .tg-share-button {
+      background: linear-gradient(135deg, #0088cc, #00a2ff);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 5px;
+    }
+    
+    @media (max-width: 480px) {
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      
+      .card {
+        padding: 15px;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="tg-header">
+      <div class="tg-title">Калькулятор метрик</div>
+      <button class="tg-button" onclick="closeApp()">Закрыть</button>
+    </div>
+    
+    <div class="tg-stats">
+      <div class="tg-stat">
+        <div class="tg-stat-value" id="tgLTV">--</div>
+        <div class="tg-stat-label">LTV</div>
+      </div>
+      <div class="tg-stat">
+        <div class="tg-stat-value" id="tgCAC">--</div>
+        <div class="tg-stat-label">CAC</div>
+      </div>
+      <div class="tg-stat">
+        <div class="tg-stat-value" id="tgEfficiency">--</div>
+        <div class="tg-stat-label">Эффективность</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- ВХОДНЫЕ ПОКАЗАТЕЛИ -->
+      <div class="card">
+        <h2>Входные данные</h2>
+        
+        <div class="form-group">
+          <label for="startSubs">Начальное количество подписчиков</label>
+          <input type="number" id="startSubs" min="0" placeholder="Количество активных клиентов">
+        </div>
+        
+        <div class="form-group">
+          <label for="churnUsers">Отток за период</label>
+          <input type="number" id="churnUsers" min="0" placeholder="Количество отписавшихся">
+        </div>
+        
+        <div class="form-group">
+          <label for="marketingSpend">Маркетинговые расходы, ₽</label>
+          <input type="number" id="marketingSpend" min="0" placeholder="Затраты на рекламу">
+        </div>
+        
+        <div class="form-group">
+          <label for="newSubs">Новые подписчики</label>
+          <input type="number" id="newSubs" min="0" placeholder="Количество новых клиентов">
+        </div>
+        
+        <div class="form-group">
+          <label for="newSubsMonthly">Новых в месяц</label>
+          <input type="number" id="newSubsMonthly" min="0" placeholder="Стабильный поток">
+        </div>
+        
+        <div class="form-group">
+          <label for="price">Стоимость подписки, ₽</label>
+          <input type="number" id="price" min="0" step="0.01" placeholder="Цена подписки">
+        </div>
+        
+        <div class="form-group">
+          <label for="grossMargin">Валовая маржа, %</label>
+          <input type="number" id="grossMargin" min="0" max="100" placeholder="Доля прибыли">
+        </div>
+        
+        <div class="actions">
+          <button class="btn" onclick="calculate()">Рассчитать</button>
+          <button class="btn btn-secondary" onclick="resetForm()">Сброс</button>
+        </div>
+      </div>
+      
+      <!-- РЕЗУЛЬТАТЫ -->
+      <div class="card">
+        <h2>Результаты</h2>
+        
+        <div id="results" class="results">
+          <div style="grid-column: 1/-1; text-align: center; padding: 20px;">
+            Введите данные и нажмите "Рассчитать"
+          </div>
+        </div>
+        
+        <div class="traffic-light">
+          <div id="trafficLight" class="light neutral">?</div>
+        </div>
+        
+        <div class="actions">
+          <button class="btn" onclick="copyResults()">
+            <span>📋</span> Копировать
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ДЭШБОРД -->
+    <div class="card">
+      <h2>Аналитика</h2>
+      
+      <div class="chart-container">
+        <canvas id="metricsChart"></canvas>
+      </div>
+      
+      <div class="detailed-metrics">
+        <div class="metric-item">
+          <div class="metric-label">ROMI</div>
+          <div class="metric-value" id="romi">--</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Окупаемость</div>
+          <div class="metric-value" id="breakEven">--</div>
+        </div>
+      </div>
+      
+      <div class="summary-card">
+        <h3>Эффективность бизнеса</h3>
+        <div class="progress-bar">
+          <div class="progress-fill" id="efficiencyBar"></div>
+        </div>
+        <div class="summary-text" id="summaryText">
+          Введите данные для анализа
+        </div>
+      </div>
+    </div>
+    
+    <div class="tg-share-section">
+      <button class="tg-share-button" onclick="shareResults()">
+        <span>📤</span> Поделиться результатами
+      </button>
+      <button class="tg-share-button" onclick="generateReport()">
+        <span>📊</span> Полный отчет
+      </button>
+    </div>
+  </div>
+  
+  <button class="tg-main-button" onclick="calculate()">Рассчитать метрики</button>
+  
+  <div id="toast" class="toast">Результаты скопированы!</div>
+
+  <script>
+    // Инициализация Telegram Web App
+    let tg = window.Telegram.WebApp;
+    tg.expand(); // Расширяем на весь экран
+    
+    // Применяем тему Telegram
+    function applyTelegramTheme() {
+      const root = document.documentElement;
+      
+      // Устанавливаем CSS переменные из темы Telegram
+      root.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+      root.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+      root.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
+      root.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#3390ec');
+      root.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#3390ec');
+      root.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+      root.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f5f5f5');
+      root.style.setProperty('--tg-theme-section-separator-color', tg.themeParams.section_separator_color || '#e0e0e0');
+    }
+    
+    // Вызываем при загрузке
+    applyTelegramTheme();
+    
+    // Функция закрытия приложения
+    function closeApp() {
+      tg.close();
+    }
+    
+    // Функция поделиться результатами
+    function shareResults() {
+      const resultsText = document.getElementById('results').innerText;
+      
+      if (resultsText && resultsText !== 'Введите данные и нажмите "Рассчитать"') {
+        tg.shareMessage(`Результаты расчета метрик подписки:\n\n${resultsText}`);
+      } else {
+        showToast('Сначала выполните расчет');
+      }
+    }
+    
+    // Функция показа уведомлений
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Функция форматирования чисел
+    const fmt = (n, d = 2) => {
+      return new Intl.NumberFormat('ru-RU', {
+        maximumFractionDigits: d,
+        minimumFractionDigits: d
+      }).format(n);
+    };
+    
+    // Получение элементов DOM
+    const elements = {
+      startSubs: document.getElementById('startSubs'),
+      churnUsers: document.getElementById('churnUsers'),
+      marketingSpend: document.getElementById('marketingSpend'),
+      newSubs: document.getElementById('newSubs'),
+      newSubsMonthly: document.getElementById('newSubsMonthly'),
+      price: document.getElementById('price'),
+      grossMargin: document.getElementById('grossMargin'),
+      results: document.getElementById('results'),
+      trafficLight: document.getElementById('trafficLight'),
+      toast: document.getElementById('toast'),
+      romi: document.getElementById('romi'),
+      breakEven: document.getElementById('breakEven'),
+      efficiencyBar: document.getElementById('efficiencyBar'),
+      summaryText: document.getElementById('summaryText'),
+      tgLTV: document.getElementById('tgLTV'),
+      tgCAC: document.getElementById('tgCAC'),
+      tgEfficiency: document.getElementById('tgEfficiency')
+    };
+    
+    // Инициализация графика
+    const ctx = document.getElementById('metricsChart').getContext('2d');
+    const metricsChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'],
+        datasets: [{
+          label: 'LTV',
+          data: [12000, 13500, 14200, 15000, 15800, 16500],
+          borderColor: tg.themeParams.link_color || '#3390ec',
+          tension: 0.4
+        }, {
+          label: 'CAC',
+          data: [8000, 8200, 7900, 8100, 7800, 7600],
+          borderColor: '#10b981',
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: tg.themeParams.text_color || '#000000'
+            }
+          }
+        },
+        scales: {
+          y: {
+            ticks: {
+              color: tg.themeParams.hint_color || '#999999'
+            },
+            grid: {
+              color: tg.themeParams.section_separator_color || '#e0e0e0'
+            }
+          },
+          x: {
+            ticks: {
+              color: tg.themeParams.hint_color || '#999999'
+            },
+            grid: {
+              color: tg.themeParams.section_separator_color || '#e0e0e0'
+            }
+          }
+        }
+      }
+    });
+    
+    // Функция расчета ROMI
+    function calculateROMI(ltv, cac) {
+      return ((ltv - cac) / cac * 100).toFixed(1);
+    }
+    
+    // Функция расчета break-even
+    function calculateBreakEven(cac, arpu) {
+      return (cac / arpu).toFixed(1);
+    }
+    
+    // Функция получения текста сводки
+    function getSummaryText(efficiency) {
+      if (efficiency >= 80) return "Отличная эффективность! Бизнес очень устойчив.";
+      if (efficiency >= 60) return "Хорошая эффективность. Есть потенциал роста.";
+      if (efficiency >= 40) return "Средняя эффективность. Нужна оптимизация.";
+      return "Низкая эффективность. Требуется вмешательство.";
+    }
+    
+    // Основная функция расчета
+    function calculate() {
+      // Получение значений из полей
+      const data = {
+        startSubs: parseFloat(elements.startSubs.value) || 0,
+        churnUsers: parseFloat(elements.churnUsers.value) || 0,
+        marketingSpend: parseFloat(elements.marketingSpend.value) || 0,
+        newSubs: parseFloat(elements.newSubs.value) || 0,
+        newSubsMonthly: parseFloat(elements.newSubsMonthly.value) || 0,
+        price: parseFloat(elements.price.value) || 0,
+        grossMargin: parseFloat(elements.grossMargin.value) || 0
+      };
+      
+      // Расчет метрик
+      const churnRate = data.startSubs > 0 ? data.churnUsers / data.startSubs : 0;
+      const retention = 1 - churnRate;
+      const cac = data.newSubs > 0 ? data.marketingSpend / data.newSubs : 0;
+      const arpu = data.price * (data.grossMargin / 100);
+      const ltv = retention > 0 && retention < 1 ? arpu * (retention / (1 - retention)) : 0;
+      const payback = arpu > 0 ? cac / arpu : 0;
+      const ratio = ltv > 0 ? cac / ltv : 0;
+      
+      // Расчет дополнительных метрик
+      const romi = calculateROMI(ltv, cac);
+      const breakEven = calculateBreakEven(cac, arpu);
+      const efficiency = Math.min(100, Math.max(0, (ltv / cac - 1) * 50));
+      
+      // Обновление результатов
+      elements.results.innerHTML = `
+        <div class="metric-card">
+          <div class="metric-label">Отток</div>
+          <div class="metric-value">${fmt(churnRate * 100)}%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Удержание</div>
+          <div class="metric-value">${fmt(retention * 100)}%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">CAC</div>
+          <div class="metric-value">${fmt(cac)} ₽</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">LTV</div>
+          <div class="metric-value">${fmt(ltv)} ₽</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Окупаемость</div>
+          <div class="metric-value">${fmt(payback, 1)} мес.</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">CAC/LTV</div>
+          <div class="metric-value">${fmt(ratio * 100)}%</div>
+        </div>
+      `;
+      
+      // Обновление светофора
+      if (ratio <= 0.33 && payback <= 6) {
+        elements.trafficLight.className = 'light green';
+        elements.trafficLight.textContent = '✓';
+      } else if (ratio <= 0.50 && payback <= 12) {
+        elements.trafficLight.className = 'light yellow';
+        elements.trafficLight.textContent = '!';
+      } else {
+        elements.trafficLight.className = 'light red';
+        elements.trafficLight.textContent = '✗';
+      }
+      
+      // Обновление детальных метрик
+      elements.romi.textContent = romi + '%';
+      elements.breakEven.textContent = breakEven + ' мес.';
+      
+      // Обновление сводки
+      elements.efficiencyBar.style.width = efficiency + '%';
+      elements.summaryText.textContent = getSummaryText(efficiency);
+      
+      // Обновление Telegram статистики
+      elements.tgLTV.textContent = fmt(ltv) + ' ₽';
+      elements.tgCAC.textContent = fmt(cac) + ' ₽';
+      elements.tgEfficiency.textContent = efficiency.toFixed(0) + '%';
+      
+      // Обновление графика
+      updateChart(ltv, cac);
+      
+      // Вибрация для обратной связи
+      if (tg.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred('medium');
+      }
+    }
+    
+    // Функция обновления графика
+    function updateChart(ltv, cac) {
+      const currentMonth = new Date().toLocaleString('ru', { month: 'short' });
+      
+      metricsChart.data.datasets[0].data.push(ltv);
+      if (metricsChart.data.datasets[0].data.length > 6) {
+        metricsChart.data.datasets[0].data.shift();
+      }
+      
+      metricsChart.data.datasets[1].data.push(cac);
+      if (metricsChart.data.datasets[1].data.length > 6) {
+        metricsChart.data.datasets[1].data.shift();
+      }
+      
+      metricsChart.data.labels.push(currentMonth);
+      if (metricsChart.data.labels.length > 6) {
+        metricsChart.data.labels.shift();
+      }
+      
+      metricsChart.update();
+    }
+    
+    // Функция сброса формы
+    function resetForm() {
+      elements.startSubs.value = '';
+      elements.churnUsers.value = '';
+      elements.marketingSpend.value = '';
+      elements.newSubs.value = '';
+      elements.newSubsMonthly.value = '';
+      elements.price.value = '';
+      elements.grossMargin.value = '';
+      
+      elements.results.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px;">Введите данные и нажмите "Рассчитать"</div>';
+      elements.trafficLight.className = 'light neutral';
+      elements.trafficLight.textContent = '?';
+      
+      elements.romi.textContent = '--';
+      elements.breakEven.textContent = '--';
+      
+      elements.efficiencyBar.style.width = '0%';
+      elements.summaryText.textContent = 'Введите данные для анализа';
+      
+      elements.tgLTV.textContent = '--';
+      elements.tgCAC.textContent = '--';
+      elements.tgEfficiency.textContent = '--';
+    }
+    
+    // Функция копирования результатов
+    function copyResults() {
+      const resultsText = Array.from(elements.results.querySelectorAll('.metric-card'))
+        .map(card => {
+          const label = card.querySelector('.metric-label').textContent;
+          const value = card.querySelector('.metric-value').textContent;
+          return `${label}: ${value}`;
+        })
+        .join('\n');
+      
+      navigator.clipboard.writeText(resultsText)
+        .then(() => {
+          showToast('Результаты скопированы!');
+        });
+    }
+    
+    // Функция генерации отчета
+    function generateReport() {
+      // Получаем текущие данные
+      const data = {
+        startSubs: parseFloat(elements.startSubs.value) || 0,
+        churnUsers: parseFloat(elements.churnUsers.value) || 0,
+        marketingSpend: parseFloat(elements.marketingSpend.value) || 0,
+        newSubs: parseFloat(elements.newSubs.value) || 0,
+        newSubsMonthly: parseFloat(elements.newSubsMonthly.value) || 0,
+        price: parseFloat(elements.price.value) || 0,
+        grossMargin: parseFloat(elements.grossMargin.value) || 0
+      };
+      
+      // Расчет метрик
+      const churnRate = data.startSubs > 0 ? data.churnUsers / data.startSubs : 0;
+      const retention = 1 - churnRate;
+      const cac = data.newSubs > 0 ? data.marketingSpend / data.newSubs : 0;
+      const arpu = data.price * (data.grossMargin / 100);
+      const ltv = retention > 0 && retention < 1 ? arpu * (retention / (1 - retention)) : 0;
+      const payback = arpu > 0 ? cac / arpu : 0;
+      const ratio = ltv > 0 ? cac / ltv : 0;
+      const romi = calculateROMI(ltv, cac);
+      const breakEven = calculateBreakEven(cac, arpu);
+      const efficiency = Math.min(100, Math.max(0, (ltv / cac - 1) * 50));
+      
+      // Определяем статус эффективности
+      let status, statusColor, recommendations;
+      if (efficiency >= 80) {
+        status = "Отличная эффективность";
+        statusColor = "#27ae60";
+        recommendations = `
+          <ul>
+            <li>Масштабируйте бизнес: увеличивайте бюджет на маркетинг</li>
+            <li>Расширяйте географию присутствия</li>
+            <li>Добавляйте новые продукты или услуги</li>
+            <li>Поддерживайте высокий уровень сервиса</li>
+          </ul>
+        `;
+      } else if (efficiency >= 60) {
+        status = "Хорошая эффективность";
+        statusColor = "#f39c12";
+        recommendations = `
+          <ul>
+            <li>Работайте над удержанием клиентов</li>
+            <li>Оптимизируйте маркетинговые каналы</li>
+            <li>Улучшайте продукт на основе обратной связи</li>
+            <li>Тестируйте новые стратегии монетизации</li>
+          </ul>
+        `;
+      } else {
+        status = "Требуется улучшение";
+        statusColor = "#e74c3c";
+        recommendations = `
+          <ul>
+            <li>Срочно снижайте стоимость привлечения клиентов (CAC)</li>
+            <li>Повышайте пожизненную ценность клиента (LTV)</li>
+            <li>Пересмотрите бизнес-модель</li>
+            <li>Проанализируйте и оптимизируйте все процессы</li>
+          </ul>
+        `;
+      }
+      
+      // Создаем HTML отчета
+      const reportHTML = `
+        <!DOCTYPE html>
+        <html lang="ru">
+        <head>
+          <meta charset="UTF-8"/>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+          <title>Отчет по метрикам подписки</title>
+          <style>
+            body {
+              font-family: 'Arial', sans-serif;
+              line-height: 1.6;
+              color: #333;
+              margin: 0;
+              padding: 20px;
+              background-color: #f9f9f9;
+            }
+            
+            .report-container {
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 20px;
+              background-color: white;
+              border-radius: 8px;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            
+            .report-header {
+              text-align: center;
+              margin-bottom: 30px;
+              border-bottom: 2px solid #3498db;
+              padding-bottom: 20px;
+            }
+            
+            .report-title {
+              color: #2c3e50;
+              font-size: 28px;
+              margin-bottom: 10px;
+            }
+            
+            .report-date {
+              color: #7f8c8d;
+              font-size: 16px;
+            }
+            
+            .report-section {
+              margin-bottom: 30px;
+            }
+            
+            .report-section-title {
+              color: #3498db;
+              font-size: 20px;
+              margin-bottom: 15px;
+              padding-bottom: 5px;
+              border-bottom: 1px solid #ddd;
+            }
+            
+            .report-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+            }
+            
+            .report-table th, .report-table td {
+              padding: 12px;
+              text-align: left;
+              border-bottom: 1px solid #ddd;
+            }
+            
+            .report-table th {
+              background-color: #f8f9fa;
+              font-weight: bold;
+            }
+            
+            .report-metric {
+              background-color: #f8f9fa;
+              border-radius: 8px;
+              padding: 15px;
+              margin-bottom: 15px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            }
+            
+            .report-metric-title {
+              font-weight: bold;
+              color: #2c3e50;
+              margin-bottom: 5px;
+            }
+            
+            .report-metric-value {
+              font-size: 24px;
+              font-weight: bold;
+              color: #3498db;
+            }
+            
+            .report-efficiency {
+              text-align: center;
+              margin: 30px 0;
+            }
+            
+            .report-efficiency-bar {
+              height: 30px;
+              background: linear-gradient(to right, #e74c3c, #f39c12, #27ae60);
+              border-radius: 15px;
+              position: relative;
+              margin: 20px 0;
+            }
+            
+            .report-efficiency-marker {
+              position: absolute;
+              top: -10px;
+              width: 50px;
+              height: 50px;
+              background-color: white;
+              border: 4px solid #3498db;
+              border-radius: 50%;
+              transform: translateX(-50%);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: bold;
+            }
+            
+            .report-recommendations {
+              background-color: #e8f4fc;
+              border-left: 4px solid #3498db;
+              padding: 20px;
+              margin: 20px 0;
+              border-radius: 0 4px 4px 0;
+            }
+            
+            .report-recommendations h3 {
+              margin-top: 0;
+              color: #2c3e50;
+            }
+            
+            .report-recommendations ul {
+              margin-bottom: 0;
+              padding-left: 20px;
+            }
+            
+            .report-footer {
+              text-align: center;
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid #ddd;
+              color: #7f8c8d;
+              font-size: 14px;
+            }
+            
+            @media print {
+              body {
+                background-color: white;
+                padding: 0;
+              }
+              
+              .report-container {
+                box-shadow: none;
+                max-width: 100%;
+                margin: 0;
+                padding: 20px;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="report-container">
+            <div class="report-header">
+              <h1 class="report-title">Отчет по метрикам подписки</h1>
+              <div class="report-date">Дата создания: ${new Date().toLocaleDateString('ru-RU')}</div>
+            </div>
+            
+            <div class="report-section">
+              <h2 class="report-section-title">Входные данные</h2>
+              <table class="report-table">
+                <tr>
+                  <th>Показатель</th>
+                  <th>Значение</th>
+                </tr>
+                <tr>
+                  <td>Начальное количество подписчиков</td>
+                  <td>${fmt(data.startSubs)}</td>
+                </tr>
+                <tr>
+                  <td>Отток за период</td>
+                  <td>${fmt(data.churnUsers)}</td>
+                </tr>
+                <tr>
+                  <td>Маркетинговые расходы</td>
+                  <td>${fmt(data.marketingSpend)} ₽</td>
+                </tr>
+                <tr>
+                  <td>Новые подписчики за период</td>
+                  <td>${fmt(data.newSubs)}</td>
+                </tr>
+                <tr>
+                  <td>Новые подписчики в месяц</td>
+                  <td>${fmt(data.newSubsMonthly)}</td>
+                </tr>
+                <tr>
+                  <td>Стоимость подписки</td>
+                  <td>${fmt(data.price)} ₽</td>
+                </tr>
+                <tr>
+                  <td>Валовая маржа</td>
+                  <td>${fmt(data.grossMargin)}%</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div class="report-section">
+              <h2 class="report-section-title">Результаты расчетов</h2>
+              
+              <div class="report-metric">
+                <div class="report-metric-title">Отток (Churn Rate)</div>
+                <div class="report-metric-value">${fmt(churnRate * 100)}%</div>
+              </div>
+              
+              <div class="report-metric">
+                <div class="report-metric-title">Удержание (Retention Rate)</div>
+                <div class="report-metric-value">${fmt(retention * 100)}%</div>
+              </div>
+              
+              <div class="report-metric">
+                <div class="report-metric-title">Стоимость привлечения (CAC)</div>
+                <div class="report-metric-value">${fmt(cac)} ₽</div>
+              </div>
+              
+              <div class="report-metric">
+                <div class="report-metric-title">Пожизненная ценность (LTV)</div>
+                <div class="report-metric-value">${fmt(ltv)} ₽</div>
+              </div>
+              
+              <div class="report-metric">
+                <div class="report-metric-title">Окупаемость</div>
+                <div class="report-metric-value">${fmt(payback, 1)} мес.</div>
+              </div>
+              
+              <div class="report-metric">
+                <div class="report-metric-title">Соотношение CAC/LTV</div>
+                <div class="report-metric-value">${fmt(ratio * 100)}%</div>
+              </div>
+              
+              <div class="report-metric">
+                <div class="report-metric-title">ROMI</div>
+                <div class="report-metric-value">${romi}%</div>
+              </div>
+              
+              <div class="report-metric">
+                <div class="report-metric-title">Точка безубыточности</div>
+                <div class="report-metric-value">${breakEven} мес.</div>
+              </div>
+            </div>
+            
+            <div class="report-section">
+              <h2 class="report-section-title">Сводка эффективности</h2>
+              
+              <div class="report-efficiency">
+                <div style="font-size: 18px; margin-bottom: 10px;">Уровень эффективности вашего бизнеса</div>
+                <div class="report-efficiency-bar">
+                  <div class="report-efficiency-marker" style="left: ${efficiency}%; color: ${statusColor};">
+                    ${efficiency.toFixed(0)}%
+                  </div>
+                </div>
+                <div style="font-size: 24px; font-weight: bold; color: ${statusColor};">
+                  ${status}
+                </div>
+              </div>
+              
+              <div class="report-recommendations">
+                <h3 style="margin-top: 0;">Рекомендации:</h3>
+                ${recommendations}
+              </div>
+            </div>
+            
+            <div class="report-footer">
+              <p>Отчет сгенерирован с помощью калькулятора метрик подписки</p>
+              <p>Для сохранения в PDF используйте функцию печати браузера (Ctrl+P)</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      // Открываем отчет в новом окне
+      const reportWindow = window.open('', '_blank');
+      reportWindow.document.write(reportHTML);
+      reportWindow.document.close();
+      
+      showToast('Отчет создан в новом окне!');
+    }
+    
+    // Инициализация
+    resetForm();
+    
+    // Обработчики событий
+    Object.values(elements).forEach(element => {
+      if (element.tagName === 'INPUT') {
+        element.addEventListener('input', calculate);
+      }
+    });
+    
+    // Устанавливаем главную кнопку
+    tg.MainButton.setText('Рассчитать метрики');
+    tg.MainButton.onClick(calculate);
+    tg.MainButton.show();
+    
+    // Обработка изменений темы
+    tg.onEvent('themeChanged', function() {
+      applyTelegramTheme();
+    });
+  </script>
+</body>
+</html>
